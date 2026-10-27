@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Custom Festive & European Christmas Accents */
+.font-display {
+  font-family: 'Cinzel', serif;
+}
+
+.font-editorial {
+  font-family: 'Playfair Display', serif;
+}
+
+/* Elegant gold gradient border & text */
+.gold-gradient-text {
+  background: linear-gradient(135deg, #DFBD69 0%, #D4AF37 50%, #B89230 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gold-border {
+  border-color: #D4AF37;
+}
+
+/* Festive holiday badge & ribbons */
+.holiday-card {
+  background: #FFFFFF;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.holiday-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 32px -12px rgba(23, 63, 53, 0.16);
+  border-color: rgba(212, 175, 55, 0.45);
+}
+
+/* Subtle snowflake decorative pattern overlay */
+.bg-festive-pattern {
+  background-color: #173F35;
+  background-image: radial-gradient(rgba(212, 175, 55, 0.15) 1px, transparent 0);
+  background-size: 32px 32px;
+}
+
+.bg-cream-pattern {
+  background-color: #F6F0E4;
+  background-image: radial-gradient(rgba(23, 63, 53, 0.05) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F6F0E4;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #173F35;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #2a5542;
+}

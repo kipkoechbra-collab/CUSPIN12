@@ -1,0 +1,381 @@
+// Prisma Schema for Chardon Holiday Market
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── Enums ─────────────────────────────────────────────────────────
+
+enum UserRole {
+  VENDOR
+  ADMIN
+}
+
+enum ApplicationStatus {
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  AWAITING_PAYMENT
+  PAID
+  CONFIRMED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAYMENT_REQUESTED
+  PROCESSING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum VendorPackage {
+  SINGLE_WEEKEND
+  FULL_SEASON
+}
+
+enum ProductCategory {
+  HANDMADE_GOODS
+  CANDLES_HOME_FRAGRANCE
+  JEWELRY_ACCESSORIES
+  HOLIDAY_DECOR
+  BAKED_GOODS
+  SPECIALTY_FOODS
+  COFFEE_COCOA_DRINKS
+  LOCAL_ART
+  WOODWORKING
+  BOUTIQUE_GIFTS
+  CHILDRENS_ITEMS
+  OHIO_THEMED
+  OTHER
+}
+
+enum SponsorLevel {
+  PLATINUM
+  GOLD
+  SILVER
+  BRONZE
+  COMMUNITY
+}
+
+// ─── User ──────────────────────────────────────────────────────────
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  passwordHash  String
+  firstName     String
+  lastName      String
+  phone         String?
+  role          UserRole @default(VENDOR)
+  isActive      Boolean  @default(true)
+  emailVerified Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  vendorApplications VendorApplication[]
+  messages           Message[]
+  auditLogs          AdminAuditLog[]     @relation("PerformedBy")
+
+  @@index([email])
+  @@index([role])
+}
+
+// ─── Market Weekend ────────────────────────────────────────────────
+
+model MarketWeekend {
+  id            String   @id @default(cuid())
+  title         String
+  description   String?
+  startDate     DateTime
+  endDate       DateTime
+  openingHours  String?
+  location      String   @default("Chardon Square, Chardon, Ohio")
+  vendorCapacity Int     @default(50)
+  availableSpaces Int    @default(50)
+  isActive      Boolean  @default(true)
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  applications  VendorApplication[]
+
+  @@index([startDate])
+}
+
+// ─── Vendor Application ────────────────────────────────────────────
+
+model VendorApplication {
+  id                  String            @id @default(cuid())
+  applicationNumber   String            @unique @default(cuid())
+  
+  // Applicant
+  userId              String
+  user                User              @relation(fields: [userId], references: [id])
+  
+  // Business Information
+  businessName        String
+  businessAddress     String
+  city                String
+  state               String
+  zipCode             String
+  website             String?
+  instagram           String?
+  facebook            String?
+  
+  // Product Information
+  productCategory     ProductCategory
+  productDescription  String
+  priceRange          String?
+  yearsInBusiness     Int?
+  previousExperience  String?
+  
+  // Market Preferences
+  requestedWeekendId  String?
+  requestedWeekend    MarketWeekend?    @relation(fields: [requestedWeekendId], references: [id])
+  vendorPackage       VendorPackage
+  
+  // Requirements
+  electricityRequired Boolean           @default(false)
+  isFoodVendor        Boolean           @default(false)
+  requiredPermits     String?
+  specialRequirements String?
+  additionalComments  String?
+  
+  // Agreement
+  agreedToTerms       Boolean           @default(false)
+  agreedAt            DateTime?
+  
+  // Status
+  status              ApplicationStatus @default(PENDING)
+  isPublicListing     Boolean           @default(false)
+  isLocked            Boolean           @default(false)
+  
+  // Admin
+  reviewNotes         String?
+  reviewedBy          String?
+  reviewedAt          DateTime?
+  
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  // Relations
+  payment             Payment?
+  uploadedFiles       UploadedFile[]
+  messages            Message[]
+
+  @@index([status])
+  @@index([userId])
+  @@index([productCategory])
+  @@index([vendorPackage])
+  @@index([createdAt])
+}
+
+// ─── Payment ───────────────────────────────────────────────────────
+
+model Payment {
+  id                  String        @id @default(cuid())
+  applicationId       String        @unique
+  application         VendorApplication @relation(fields: [applicationId], references: [id])
+  
+  amount              Float
+  currency            String        @default("USD")
+  status              PaymentStatus @default(UNPAID)
+  
+  // Payment processor
+  stripePaymentId     String?
+  stripeSessionId     String?
+  transactionRef      String?
+  
+  // Manual payment
+  isManualPayment     Boolean       @default(false)
+  manualPaymentNote   String?
+  markedPaidBy        String?
+  
+  paymentDate         DateTime?
+  refundDate          DateTime?
+  refundAmount        Float?
+  
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  @@index([status])
+  @@index([applicationId])
+}
+
+// ─── Sponsor ───────────────────────────────────────────────────────
+
+model Sponsor {
+  id          String       @id @default(cuid())
+  name        String
+  description String?
+  logoUrl     String?
+  websiteUrl  String?
+  level       SponsorLevel @default(COMMUNITY)
+  isActive    Boolean      @default(true)
+  sortOrder   Int          @default(0)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([level])
+  @@index([isActive])
+}
+
+// ─── Sponsor Application ───────────────────────────────────────────
+
+model SponsorApplication {
+  id            String   @id @default(cuid())
+  companyName   String
+  contactName   String
+  email         String
+  phone         String?
+  website       String?
+  level         SponsorLevel @default(COMMUNITY)
+  message       String?
+  status        String   @default("PENDING")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// ─── Contact Message ───────────────────────────────────────────────
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  subject   String
+  message   String
+  isRead    Boolean  @default(false)
+  isReplied Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isRead])
+  @@index([createdAt])
+}
+
+// ─── Announcement ──────────────────────────────────────────────────
+
+model Announcement {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  isActive  Boolean  @default(true)
+  isPinned  Boolean  @default(false)
+  startDate DateTime?
+  endDate   DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive])
+}
+
+// ─── FAQ ───────────────────────────────────────────────────────────
+
+model FAQ {
+  id        String   @id @default(cuid())
+  question  String
+  answer    String
+  category  String?
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive])
+  @@index([sortOrder])
+}
+
+// ─── Newsletter Subscriber ─────────────────────────────────────────
+
+model NewsletterSubscriber {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  firstName    String?
+  isActive     Boolean  @default(true)
+  subscribedAt DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([email])
+  @@index([isActive])
+}
+
+// ─── Uploaded File ─────────────────────────────────────────────────
+
+model UploadedFile {
+  id            String             @id @default(cuid())
+  applicationId String?
+  application   VendorApplication? @relation(fields: [applicationId], references: [id])
+  
+  filename      String
+  originalName  String
+  mimeType      String
+  size          Int
+  url           String
+  
+  createdAt     DateTime           @default(now())
+
+  @@index([applicationId])
+}
+
+// ─── Message ───────────────────────────────────────────────────────
+
+model Message {
+  id            String             @id @default(cuid())
+  applicationId String?
+  application   VendorApplication? @relation(fields: [applicationId], references: [id])
+  
+  senderId      String?
+  sender        User?              @relation(fields: [senderId], references: [id])
+  
+  subject       String?
+  content       String
+  isFromAdmin   Boolean            @default(false)
+  isRead        Boolean            @default(false)
+  
+  createdAt     DateTime           @default(now())
+
+  @@index([applicationId])
+  @@index([isRead])
+}
+
+// ─── Admin Audit Log ───────────────────────────────────────────────
+
+model AdminAuditLog {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation("PerformedBy", fields: [userId], references: [id])
+  
+  action      String
+  entityType  String
+  entityId    String?
+  oldValue    String?  @db.Text
+  newValue    String?  @db.Text
+  ipAddress   String?
+  
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([entityType])
+  @@index([createdAt])
+}
+
+// ─── Site Settings ─────────────────────────────────────────────────
+
+model SiteSettings {
+  id    String @id @default("main")
+  key   String @unique
+  value String @db.Text
+
+  updatedAt DateTime @updatedAt
+
+  @@index([key])
+}

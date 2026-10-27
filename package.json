@@ -1,0 +1,23 @@
+{
+  "name": "chardon-holiday-market",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Chardon Holiday Market - A European-Inspired Christmas Market Platform",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm run dev",
+    "build": "npm run build:server && npm run build:client",
+    "build:server": "cd server && npm run build",
+    "build:client": "cd client && npm run build",
+    "db:migrate": "cd server && npx prisma migrate dev",
+    "db:push": "cd server && npx prisma db push",
+    "db:seed": "cd server && npx prisma db seed",
+    "db:studio": "cd server && npx prisma studio",
+    "install:all": "npm install && cd server && npm install && cd ../client && npm install",
+    "postinstall": "cd server && npm install && cd ../client && npm install"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
